@@ -1,4 +1,6 @@
 class Place
+	include Mongoid::Document
+  include ActiveModel::Model
 	attr_accessor :id, :formatted_address, :location, :address_components
 
 	def self.mongo_client
@@ -16,10 +18,11 @@ class Place
 
   def initialize(params={})
     @id = params[:_id].to_s
-    @address_components = params[:address_components].map{ |a| AddressComponent.new(a)} if !params[:address_components].nil?
     @formatted_address = params[:formatted_address]
-    # @location = Point.new(params[:geometry][:geolocation])
+    @location = Point.new(params[:geometry][:geolocation])
+    @address_components = params[:address_components].map{ |a| AddressComponent.new(a)} if !params[:address_components].nil?
   end
+
 
    def self.find_by_short_name(short_name)
     collection.find(:'address_components.short_name' => short_name)
@@ -27,8 +30,16 @@ class Place
 
   def self.to_places(places)
     places.map do |place|
-      return(Place.new(place))
+			(Place.new(place))
     end
   end
+
+  def self.create_indexes
+    collection.indexes.create_one(:'geometry.geolocation' => Mongo::Index::GEO2DSPHERE)
+  end
+
+  def self.remove_indexes
+  	collection.indexes.drop_one('geometry.geolocation_2dsphere')
+	end
 
 end

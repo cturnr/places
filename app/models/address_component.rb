@@ -1,4 +1,5 @@
 class AddressComponent
+	# include ActiveModel::Model
 	attr_reader :long_name, :short_name, :types
 
 	def initialize(params={})
