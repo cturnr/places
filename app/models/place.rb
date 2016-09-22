@@ -34,6 +34,11 @@ class Place
     end
   end
 
+def self.find(id)
+    place = collection.find(_id: BSON::ObjectId.from_string(id)).first
+    place.nil? ? nil : Place.new(place)
+  end
+
   def self.create_indexes
     collection.indexes.create_one(:'geometry.geolocation' => Mongo::Index::GEO2DSPHERE)
   end
@@ -41,5 +46,20 @@ class Place
   def self.remove_indexes
   	collection.indexes.drop_one('geometry.geolocation_2dsphere')
 	end
+
+	def self.all(offset = 0, limit = 0)
+		result = collection
+			.find
+			.skip(offset)
+			.limit(limit)
+
+		result.map {|place| Place.new(place)}
+	end
+
+	def destroy
+		id = BSON::ObjectId.from_string(@id)
+    self.class.collection.delete_one(:_id => id)
+	end
+
 
 end
