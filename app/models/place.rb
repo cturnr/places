@@ -39,14 +39,6 @@ def self.find(id)
     place.nil? ? nil : Place.new(place)
   end
 
-  def self.create_indexes
-    collection.indexes.create_one(:'geometry.geolocation' => Mongo::Index::GEO2DSPHERE)
-  end
-
-  def self.remove_indexes
-  	collection.indexes.drop_one('geometry.geolocation_2dsphere')
-	end
-
 	def self.all(offset = 0, limit = 0)
 		result = collection
 			.find
@@ -96,5 +88,26 @@ def self.find(id)
       ]).map { |p| p[:_id].to_s }
   end
 
-  
+  def self.create_indexes
+    collection.indexes.create_one(:'geometry.geolocation' => Mongo::Index::GEO2DSPHERE)
+  end
+
+  def self.remove_indexes
+  	collection.indexes.drop_one('geometry.geolocation_2dsphere')
+	end
+
+	def self.near(point, max_meters = nil)
+		collection.find('geometry.geolocation' => {:$near => {:$geometry => point.to_hash, :$maxDistance => max_meters}})
+	end
+
+	def near(max_meters = nil)
+		places = self.class.near(@location, max_meters)
+		places.nil? ? nil : places.map { |p| Place.new(p)}
+	end
+
+	# def photos(offset = 0, limit = 0)
+	# 	Photo.find_photos_for_place(@id).limit(0).skip(0).map{|p| Photo.new(p)}
+	# end
+
 end
+
