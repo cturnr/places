@@ -61,5 +61,40 @@ def self.find(id)
     self.class.collection.delete_one(:_id => id)
 	end
 
+	def self.get_address_components(sort = nil, offset = nil, limit = nil)
+    options = []
+    options << {:$sort => sort} if sort.present?
+    options << {:$skip => offset} if offset.present?
+    options << {:$limit => limit} if limit.present?
+    collection.find.aggregate(
+      [
+        {:$project => {_id: 1, address_components: 1, formatted_address: 1, geometry: {geolocation: 1}}},
+        {:$unwind => '$address_components'}
+      ].concat(options)
+    )
+  end
 
+	def self.get_country_names 
+		    collection.find.aggregate(
+      [
+        {:$project => {_id: 0, address_components: {long_name: 1, types: 1}}},
+        {:$unwind => '$address_components'},
+        {:$unwind => '$address_components.types'},
+        {:$match => {'address_components.types' => 'country'}},
+        {:$group => {_id: '$address_components.long_name'}}
+      ]).map { |p| p[:_id] }
+	end
+
+  def self.find_ids_by_country_code(country_code)
+    collection.find.aggregate(
+      [
+        {:$project => {_id: 1, address_components: 1}},
+        {:$unwind => '$address_components'},
+        {:$unwind => '$address_components.types'},
+        {:$match => {'address_components.types' => 'country', 'address_components.short_name' => country_code}},
+        :$project => {_id: 1}
+      ]).map { |p| p[:_id].to_s }
+  end
+
+  
 end
