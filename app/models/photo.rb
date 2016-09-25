@@ -1,4 +1,6 @@
 class Photo
+	include ActiveModel::Model
+
 	attr_accessor :id, :location
 	attr_writer :contents
 
@@ -80,6 +82,17 @@ def save
   def destroy
   	self.class.mongo_client.database.fs.find(:_id => BSON::ObjectId(@id)).delete_one
   end
+
+	def find_nearest_place_id(max_distance)
+		place = Place.near(@location, max_distance).limit(1).projection(:_id => 1).first
+		place.nil? ? nil : place[:_id]
+
+		# if place.nil?
+  # 		return nil
+  # 	else
+  # 		return place[:_id]
+  # 	end
+	end
 
 
 end
