@@ -105,9 +105,14 @@ def self.find(id)
 		places.nil? ? nil : places.map { |p| Place.new(p)}
 	end
 
-	# def photos(offset = 0, limit = 0)
-	# 	Photo.find_photos_for_place(@id).limit(0).skip(0).map{|p| Photo.new(p)}
-	# end
+  def photos(offset = 0, limit = 0)
+    Photo.find_photos_for_place(@id).limit(0).skip(0).map{|p|Photo.new(p)}
+  end
+
+  def persisted?
+  	!@id.nil?
+  end
+  	
 
 end
 

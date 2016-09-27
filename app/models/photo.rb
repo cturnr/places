@@ -8,21 +8,24 @@ class Photo
 		Mongoid::Clients.default
 	end
 
+	def self.collection
+    mongo_client.database.fs
+  end
+
 	def initialize(params = nil)
 		if params.present?
 			@id = params[:_id].to_s || params[:id]
 			@location = Point.new(params[:metadata][:location])
 			@place = params[:metadata][:place]
 		end
-		# @files = self.class.collection
+		@files = self.class.collection
 	end
 
 	def persisted?
   	@id.present?
   end
 
-def save
-
+	def save
     if persisted?
       description = {}
       description[:metadata] = {}
@@ -30,7 +33,7 @@ def save
       description[:metadata][:place] = @place
 
       @files.find({_id: BSON::ObjectId.from_string(id)}).update_one(:$set => description)
-
+			# self.class.mongo_client.database.fs.find(:_id => BSON::ObjectId(@id))
     else
     if @contents
       gps = EXIFR::JPEG.new(@contents).gps
@@ -86,13 +89,19 @@ def save
 	def find_nearest_place_id(max_distance)
 		place = Place.near(@location, max_distance).limit(1).projection(:_id => 1).first
 		place.nil? ? nil : place[:_id]
-
-		# if place.nil?
-  # 		return nil
-  # 	else
-  # 		return place[:_id]
-  # 	end
 	end
 
+  def place
+    @place.nil? ? nil : Place.find(@place)
+  end
+
+  def place=(place)
+    @place = BSON::ObjectId.from_string( place.is_a?(Place) ? place.id : place)
+  end
+
+   def self.find_photos_for_place(id)
+    id = id.is_a?(String) ? BSON::ObjectId.from_string(id) : id
+    collection.find({'metadata.place': id})
+  end
 
 end
